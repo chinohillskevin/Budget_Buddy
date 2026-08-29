@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Budget Buddy helps kids keep track of allowance, spending, money to pay back, and saving goals.">
+  <title>Budget Buddy — Your allowance helper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#overview" aria-label="Budget Buddy home">
+        <span class="brand-mark">B</span><span>Budget Buddy</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a class="nav-link active" href="#overview" data-section="overview"><span>⌂</span> Home</a>
+        <a class="nav-link" href="#charges" data-section="charges"><span>↗</span> Regular costs <b id="chargeBadge" hidden>0</b></a>
+        <a class="nav-link" href="#owed" data-section="owed"><span>⇄</span> Money to pay back</a>
+        <a class="nav-link" href="#goals" data-section="goals"><span>◇</span> Saving goals</a>
+      </nav>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" aria-label="Open menu">☰</button>
+        <div><p class="eyebrow" id="todayLabel"></p><h1>Hi, Kevin! <span class="wave">👋</span></h1></div>
+        <div class="topbar-actions">
+          <button class="secondary-btn" data-open="log-spending">＋ Add spending</button>
+          <button class="primary-btn" data-open="add-money">＋ Add allowance</button>
+        </div>
+      </header>
+
+      <section class="view active" id="overview">
+        <div class="balance-card">
+          <div>
+            <p class="card-label">MONEY YOU HAVE <button class="eye" id="toggleBalance" aria-label="Hide amount">◉</button></p>
+            <h2 id="balanceValue">$0.00</h2>
+            <p class="balance-note">Your allowance money</p>
+          </div>
+          <div class="balance-art" aria-hidden="true"><span class="coin one">$</span><span class="coin two">$</span><div class="wallet">▰</div></div>
+        </div>
+
+        <div class="overview-priority-grid">
+        <article class="panel debt-overview">
+          <div class="panel-head"><div><p class="eyebrow">MONEY TO PAY BACK</p><h3 id="overviewDebtTotal">$0.00</h3></div><button class="secondary-btn" data-jump="owed">See the list</button></div>
+          <div class="overview-debt-list" id="overviewDebtList"></div>
+        </article>
+
+        <article class="panel goal-preview top-goal-feature">
+          <div class="panel-head"><div><p class="eyebrow">MAIN SAVING GOAL</p><h3 id="topGoalName">No saving goal yet</h3></div></div>
+          <div class="goal-visual"><div class="soccer-goal" aria-hidden="true">🥅<span>⚽</span></div></div>
+          <div class="goal-row"><div><strong id="topGoalSaved">$0.00</strong><small id="topGoalTarget"> saved out of $0.00</small></div><b id="topGoalPercent">0%</b></div>
+          <div class="progress goal"><i id="topGoalProgress" style="width:0"></i></div>
+          <p class="goal-date">This bar fills up as you save more.</p>
+          <button class="secondary-btn wide" id="addSavingsButton" data-open="add-savings" disabled>＋ Put money in savings</button>
+        </article>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-head"><span class="icon-box purple">↘</span></div>
+            <p>Money spent this week</p><h3 id="spentValue">$0.00</h3>
+            <small>From the purchases you added</small>
+          </article>
+          <article class="stat-card warning-card">
+            <div class="stat-head"><span class="icon-box orange">!</span><span class="pill" id="chargeStatus">NONE</span></div>
+            <p>Regular costs</p><h3 id="chargeTotal">$0.00</h3>
+            <small id="chargeNext">Nothing set up yet</small>
+            <button class="text-btn" data-jump="charges">See regular costs →</button>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head"><span class="icon-box blue">⇄</span></div>
+            <p>Money to pay back</p><h3 id="owedTotal">$0.00</h3>
+            <small id="owedPeople">You’re all caught up</small>
+            <button class="text-btn" data-jump="owed">See the list →</button>
+          </article>
+        </div>
+
+        <div class="content-grid">
+          <article class="panel spending-panel">
+            <div class="panel-head"><div><p class="eyebrow">YOUR SPENDING</p><h3>What you spent money on</h3></div><select aria-label="Choose a time"><option>This week</option><option>This month</option></select></div>
+            <div class="chart-wrap">
+              <div class="donut" id="spendingDonut"><div><strong id="chartTotal">$0.00</strong><small>SPENT</small></div></div>
+              <div class="legend" id="spendingLegend">
+              </div>
+            </div>
+            <div class="nudge"><span>💡</span><p><strong>No spending added yet.</strong><br>Helpful money tips will show up here.</p></div>
+          </article>
+
+        </div>
+
+        <article class="panel spending-log-panel">
+          <div class="panel-head"><div><p class="eyebrow">THINGS YOU BOUGHT</p><h3>Your latest purchases</h3></div><div class="panel-actions"><button class="secondary-btn" data-open="bulk-spending">▦ Add a list</button><button class="secondary-btn" data-open="log-spending">＋ Add one</button></div></div>
+          <div id="transactionList"></div>
+        </article>
+      </section>
+
+      <section class="view" id="charges">
+        <div class="section-title"><div><p class="eyebrow">PLAN AHEAD</p><h2>Regular costs</h2><p>These are things you pay for again and again, like a game pass.</p></div><button class="primary-btn" data-open="new-charge">＋ Add regular cost</button></div>
+        <div class="panel list-panel" id="chargeList"></div>
+      </section>
+
+      <section class="view" id="owed">
+        <div class="section-title"><div><p class="eyebrow">PAY PEOPLE BACK</p><h2>Money to pay back</h2><p>Write down money you borrowed so you remember to return it.</p></div><button class="primary-btn" data-open="new-debt">＋ Add debt</button></div>
+        <div class="panel list-panel" id="debtList"></div>
+      </section>
+
+      <section class="view" id="goals">
+        <div class="section-title"><div><p class="eyebrow">SAVE FOR SOMETHING AWESOME</p><h2>Saving goals</h2><p>Pick something you want and watch your saved money grow.</p></div><button class="primary-btn" data-open="new-goal">＋ New goal</button></div>
+        <div class="goals-grid" id="goalsList"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+      <p class="eyebrow">BUDGET BUDDY</p><h2 id="modalTitle">Add allowance</h2><p id="modalDescription">Add money you received.</p>
+      <form id="modalForm">
+        <div id="formFields"></div>
+        <button class="primary-btn wide" id="modalSubmit" type="submit">Save changes</button>
+      </form>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
