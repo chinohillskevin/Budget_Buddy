@@ -85,9 +85,13 @@
             <div class="panel-head"><div><p class="eyebrow">YOUR SPENDING</p><h3>What you spent money on</h3></div><select aria-label="Choose a time"><option>This week</option><option>This month</option></select></div>
             <div class="chart-wrap">
               <div class="donut" id="spendingDonut"><div><strong id="chartTotal">$0.00</strong><small>SPENT</small></div></div>
-              <div class="legend" id="spendingLegend">
+              <div class="daily-chart">
+                <div class="daily-chart-head"><div><p class="eyebrow">LAST 7 DAYS</p><h4>Money spent each day</h4></div><strong id="dailyChartTotal">$0.00</strong></div>
+                <svg id="dailyLineChart" viewBox="0 0 520 180" role="img" aria-label="Line graph showing money spent on each of the last seven days"></svg>
+                <div class="daily-chart-labels" id="dailyChartLabels"></div>
               </div>
             </div>
+            <div class="legend" id="spendingLegend"></div>
             <div class="nudge"><span>💡</span><p><strong>No spending added yet.</strong><br>Helpful money tips will show up here.</p></div>
           </article>
 

@@ -66,10 +66,37 @@ function renderSpending(){
     const segments=Object.entries(totals).filter(([,total])=>total.amount>0).map(([category,total])=>{const start=position;position+=total.amount/state.spent*100;return `${spendingCategories[category].color} ${start}% ${position}%`});
     $('#spendingDonut').style.background=`conic-gradient(${segments.join(',')})`;
   }
+  renderDailyChart();
   $('#transactionList').innerHTML=state.transactions.length ? state.transactions.map((transaction,index)=>`<div class="list-item"><span class="list-icon">${spendingCategories[transaction.category].className==='food'?'🍔':spendingCategories[transaction.category].className==='fun'?'★':spendingCategories[transaction.category].className==='transport'?'↗':'•'}</span><span><strong>${escapeHtml(transaction.item)}</strong><small>${transaction.category} · ${transaction.date}</small></span><strong class="list-amount">−${money(transaction.amount)}</strong><button class="list-action" onclick="deleteSpending(${index})">Remove</button></div>`).join('') : '<div class="empty-state"><span>↘</span><strong>No purchases added yet</strong><p>Add something you bought and it will show up here.</p></div>';
   const nudge=$('.nudge p');
   nudge.innerHTML=state.transactions.length?`<strong>You added ${state.transactions.length} ${state.transactions.length===1?'purchase':'purchases'} this week.</strong><br>Great job keeping track of your allowance!`:'<strong>No spending added yet.</strong><br>Helpful money tips will show up here.';
 }
+
+function renderDailyChart(){
+  const days=[];
+  const today=new Date();today.setHours(0,0,0,0);
+  for(let offset=6;offset>=0;offset--){const date=new Date(today);date.setDate(today.getDate()-offset);days.push({date,key:localDateKey(date),amount:0})}
+  state.transactions.forEach(transaction=>{
+    const key=transaction.rawDate||legacyTransactionDate(transaction.date);
+    const day=days.find(item=>item.key===key);
+    if(day)day.amount+=transaction.amount;
+  });
+  const total=days.reduce((sum,day)=>sum+day.amount,0);
+  $('#dailyChartTotal').textContent=`${money(total)} total`;
+  const width=520,height=180,left=28,right=18,top=18,bottom=20;
+  const plotWidth=width-left-right,plotHeight=height-top-bottom;
+  const max=Math.max(...days.map(day=>day.amount),1);
+  const points=days.map((day,index)=>({x:left+(index/(days.length-1))*plotWidth,y:top+plotHeight-(day.amount/max)*plotHeight,amount:day.amount}));
+  const line=points.map((point,index)=>`${index?'L':'M'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ');
+  const area=`${line} L ${points.at(-1).x.toFixed(1)} ${(top+plotHeight).toFixed(1)} L ${points[0].x.toFixed(1)} ${(top+plotHeight).toFixed(1)} Z`;
+  const grid=[0,.5,1].map(level=>{const y=top+plotHeight-level*plotHeight;return `<line x1="${left}" y1="${y}" x2="${width-right}" y2="${y}" class="chart-grid"/>`}).join('');
+  const dots=points.map(point=>`<g><circle cx="${point.x}" cy="${point.y}" r="5" class="chart-dot"/><title>${money(point.amount)}</title></g>`).join('');
+  $('#dailyLineChart').innerHTML=`${grid}<path d="${area}" class="chart-area"/><path d="${line}" class="chart-line"/>${dots}`;
+  $('#dailyChartLabels').innerHTML=days.map(day=>`<span>${day.date.toLocaleDateString('en-US',{weekday:'short'})}</span>`).join('');
+}
+
+function localDateKey(date){const year=date.getFullYear();const month=String(date.getMonth()+1).padStart(2,'0');const day=String(date.getDate()).padStart(2,'0');return `${year}-${month}-${day}`}
+function legacyTransactionDate(label){if(!label)return '';const parsed=new Date(`${label}, ${new Date().getFullYear()}`);return Number.isNaN(parsed.getTime())?'':localDateKey(parsed)}
 
 function escapeHtml(value){const element=document.createElement('div');element.textContent=value;return element.innerHTML}
 function formatChargeDate(date){return new Date(`${date}T00:00:00`).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
@@ -145,13 +172,13 @@ $('#modalForm').addEventListener('submit',e=>{
     if(enteredRows.some(row=>!row.item||!row.amountText||+row.amountText<=0||!row.date))return toast('Fill in the name and cost for each row you use');
     const rows=enteredRows.map(row=>({item:row.item,amount:+row.amountText,category:row.category,date:row.date}));
     if(!rows.length)return toast('Add at least one thing you bought');
-    const purchases=rows.map(row=>({...row,date:new Date(`${row.date}T00:00:00`).toLocaleDateString('en-US',{month:'short',day:'numeric'})}));
+    const purchases=rows.map(row=>({...row,rawDate:row.date,date:new Date(`${row.date}T00:00:00`).toLocaleDateString('en-US',{month:'short',day:'numeric'})}));
     const total=purchases.reduce((sum,purchase)=>sum+purchase.amount,0);
     state.transactions.unshift(...purchases);state.spent+=total;state.balance-=total;
     updateSummary();closeModal();toast(`Added ${purchases.length} purchases that cost ${money(total)} total`);return;
   }
   if(modalType==='add-money'){const amount=+data.amount;state.balance+=amount;toast(`${money(amount)} added to the money you have`);}
-  if(modalType==='log-spending'){const amount=+data.amount;state.transactions.unshift({item:data.item,amount,category:data.category,date:new Date(`${data.date}T00:00:00`).toLocaleDateString('en-US',{month:'short',day:'numeric'})});state.spent+=amount;state.balance-=amount;toast(`Added your ${money(amount)} purchase`);}
+  if(modalType==='log-spending'){const amount=+data.amount;state.transactions.unshift({item:data.item,amount,category:data.category,rawDate:data.date,date:new Date(`${data.date}T00:00:00`).toLocaleDateString('en-US',{month:'short',day:'numeric'})});state.spent+=amount;state.balance-=amount;toast(`Added your ${money(amount)} purchase`);}
   if(modalType==='add-savings' && state.goals.length){const goal=state.goals[state.topGoalIndex];const requested=+data.amount;const amt=Math.min(requested,Math.max(0,goal.target-goal.saved));if(amt>state.balance){toast('You do not have enough money for that');closeModal();return}if(amt===0){toast('You already finished this goal!');closeModal();return}goal.saved+=amt;state.balance-=amt;toast(`${money(amt)} saved for ${goal.name}`);}
   if(modalType==='new-charge'){state.charges.push({icon:'↻',name:data.name,dueDate:data.date,frequency:data.frequency,amount:+data.amount});toast('Regular cost added');}
   if(modalType==='new-debt'){state.debts.push({icon:data.name[0].toUpperCase(),name:data.name,reason:data.reason,dueDate:data.date||'',amount:+data.amount});toast('Debt added');}
